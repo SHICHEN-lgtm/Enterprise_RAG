@@ -1,0 +1,68 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: enterprise-qa
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:enterprise_qa}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: none            # 表结构由 sql/schema.sql 显式管理，便于审计与 Explain 优化
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# ============ LLM（DeepSeek，OpenAI 兼容） ============
+llm:
+  provider: deepseek
+  base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+  api-key: ${DEEPSEEK_API_KEY:}
+  model: ${DEEPSEEK_MODEL:deepseek-chat}
+  timeout-seconds: 60
+  temperature: 0.3
+  max-tokens: 2048
+
+# ============ RAG 混合检索 ============
+rag:
+  chunk-size: 600          # 文本分块字符数
+  chunk-overlap: 80        # 分块重叠，保留上下文
+  top-k: 4                 # 检索返回的候选片段数
+  # 向量语义检索（可选）：配置了 embedding 服务即启用向量分支，与关键词检索做混合加权；
+  # 未配置时自动降级为 MySQL FULLTEXT 关键词检索，保证开箱可跑。
+  vector:
+    enabled: ${EMBEDDING_ENABLED:false}
+    base-url: ${EMBEDDING_BASE_URL:}
+    api-key: ${EMBEDDING_API_KEY:}
+    model: ${EMBEDDING_MODEL:}
+    dimension: 1536
+  weights:
+    keyword: 0.6            # 关键词检索权重
+    vector: 0.4             # 向量检索权重
+
+# ============ Prompt 模板（可沉淀、可覆盖） ============
+prompt:
+  system: |
+    你是一名企业内部的智能问答助手，基于给定的内部知识片段回答问题。
+    要求：
+    1. 只能依据提供的知识片段作答，严禁编造知识片段之外的内容。
+    2. 知识片段不足以回答时，明确说明"知识库中未检索到相关信息"，并给出可能的检索建议。
+    3. 回答使用简体中文，结构清晰，可直接用于业务决策。
+  user: |
+    【知识片段】
+    {context}
+
+    【用户问题】
+    {question}
