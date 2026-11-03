@@ -160,11 +160,4 @@ FROM qa_record ORDER BY created_at DESC LIMIT 20;
 | 检索不到内容 | 确认 `document_chunk` 有数据（首次启动自动切块）；`document_chunk.content` 全文索引需 ngram，确认 MySQL 8 |
 | 全文索引不生效 | `SHOW INDEX FROM document_chunk;` 检查 `ft_chunk_content` 是否存在；中文检索依赖 ngram 分词 |
 
-## 9. 简历对应描述（供参考）
 
-本项目的设计要点与简历口径的映射：
-- **RAG 混合检索** → 关键词（FULLTEXT ngram）+ 可插拔向量检索；
-- **Prompt 规则沉淀** → `PromptTemplate` + 可配置模板，评测不同版本；
-- **效果评测** → `qa_record` 沉淀延迟/token/来源，支撑准确率与延迟分析；
-- **后端与数据模型** → 分层 RESTful API + MySQL 显式 schema 与索引（配合 Explain 优化）；
-- **扩展点** → `LlmClient`（多厂商）、`VectorRetriever`（向量语义）均为接口，可扩展。
